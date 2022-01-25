@@ -137,6 +137,7 @@ class PaginatorViewsTest(TestCase):
             'page_obj').paginator.object_list.count()
         self.assertEqual(count_posts_before,
                          PaginatorViewsTest.batch_size)
+        cache.clear()
         Post.objects.first().delete()
         count_post_after = response.context.get(
             'page_obj').paginator.object_list.count()
