@@ -1,0 +1,26 @@
+<!-- templates/base.html -->
+{% load static %}
+<!DOCTYPE html> <!-- Используется html 5 версии -->
+<html lang="ru"> <!-- Язык сайта - русский -->
+<head>
+  {% include 'includes/head.html' %}
+  {% block title %}
+    title не подвезли :(
+  {% endblock %}
+</head>
+<body>
+<header>
+  {% include 'includes/header.html' %}
+</header>
+<main>
+  <div class="container">
+    {% block content %}
+      Контент не подвезли :(
+    {% endblock %}
+  </div>
+</main>
+<footer>
+  {% include 'includes/footer.html' %}
+</footer>
+</body>
+</html>
