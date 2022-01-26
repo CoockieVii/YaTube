@@ -23,7 +23,7 @@
       {% endthumbnail %}
       <br>
       <a href="{% url 'posts:post_detail' post.id %}">Подробнее</a><br>
-      {% if post.author == user %}
+      {% if post.author == request.user %}
         <a href="{% url 'posts:post_edit' post.id %}">Редактировать</a><br>
       {% endif %}
       {% if post.group %}

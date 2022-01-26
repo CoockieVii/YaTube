@@ -7,19 +7,9 @@
   <main>
     <div class="mb-5">
       <h1>Все посты пользователя {{ author }}
-        {% if show_subscription %}
-          {% if following %}
-            <a class="btn btn-lg btn-light"
-               href="{% url 'posts:profile_unfollow' author.username %}" role="button">
-              Отписаться</a>
-          {% else %}
-            <a class="btn btn-lg btn-primary"
-               href="{% url 'posts:profile_follow' author.username %}" role="button">
-              Подписаться</a>
-          {% endif %}
-        {% endif %}
+        {% include 'posts/includes/follow.html' %}
       </h1>
-      <h3>Всего постов: {{ posts.count }} </h3>
+      <h3>Всего постов: {{ author.posts.count }} </h3>
       <article>
         {% for post in page_obj %}
           <ul>
@@ -35,7 +25,7 @@
           </p>
           <p>
             <a href="{% url 'posts:post_detail' post.id %}">Подробнее</a><br>
-            {% if post.author == user %}
+            {% if post.author == request.user %}
               <a href="{% url 'posts:post_edit' post.id %}">Редактировать</a><br>
             {% endif %}
             {% if post.group %}

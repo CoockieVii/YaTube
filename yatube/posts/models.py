@@ -50,18 +50,16 @@ class Comment(CreatedModel):
         Post,
         on_delete=models.CASCADE,
         related_name='comments',
-        blank=False,
-        null=True)
+        blank=False)
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='comments',
-        blank=False,
-        null=True)
+        blank=False)
     text = models.TextField('Текст комментария')
 
     class Meta(CreatedModel.Meta):
-        verbose_name = 'Комментарий'
+        verbose_name = 'Комментарии'
 
 
 class Follow(CreatedModel):
@@ -69,10 +67,15 @@ class Follow(CreatedModel):
         User,
         on_delete=models.CASCADE,
         related_name='follower',
-        blank=False,
-        null=True)
+        blank=False)
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='following',
         blank=False)
+
+    class Meta(CreatedModel.Meta):
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'author'],
+                name='unique_follow')]
