@@ -45,9 +45,9 @@ def profile(request, username):
     # Спасибо, я и не задумывался о том,
     # что юзера можно таким образом получать))
     if user.is_authenticated:
-        context['following'] = False
-    if Follow.objects.filter(author_id=author.id, user_id=user.id):
-        context['following'] = True
+        context['following'] = False  # Такой способ одобряется?
+        if Follow.objects.filter(author_id=author.id, user_id=user.id):
+            context['following'] = True
 
     template = 'posts/profile.html'
     return render(request, template, context)
