@@ -15,6 +15,14 @@ class URLTests(TestCase):
         """Фикстуры для тестов"""
         super().setUpClass()
         cls.user = User.objects.create_user(username='auth')
+        cls.guest_client = Client()  # Создаем неавторизованный клиент
+        cls.authorized_client = Client()  # Создаем пользователя
+        cls.authorized_client.force_login(cls.user)
+        # Создаем второго юзера для теста подписок
+        cls.new_user = User.objects.create_user(username='new_user')
+        cls.authorized_new_user = Client()
+        cls.authorized_new_user.force_login(cls.new_user)
+
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='classic',
@@ -31,13 +39,6 @@ class URLTests(TestCase):
             author=cls.user,
             group=cls.group
         )
-
-    def setUp(self):
-        """Создание неавторизованного и авторизованного клиента"""
-        self.guest_client = Client()  # Создаем неавторизованный клиент
-        self.authorized_client = Client()  # Создаем пользователя
-        self.authorized_client.force_login(
-            self.user)  # Авторизуем пользователя
 
     def test_url_index_and_status(self):
         """URL-адрес использует соответствующий шаблон и статус HTTP."""
@@ -93,3 +94,21 @@ class URLTests(TestCase):
         self.assertEqual(auth_status, HTTPStatus.OK)
         guest_status = self.guest_client.get(template).status_code
         self.assertEqual(guest_status, HTTPStatus.OK)
+
+    def test_follow_status(self):
+        """URL-адрес использует соответствующий шаблон и статус HTTP."""
+        template = reverse('posts:profile_follow',
+                           kwargs={'username': self.post.author})
+        response = self.authorized_new_user.get(template)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        guest_status = self.guest_client.get(template).status_code
+        self.assertEqual(guest_status, HTTPStatus.FOUND)
+
+    def test_unfollow_status(self):
+        """URL-адрес использует соответствующий шаблон и статус HTTP."""
+        template = reverse('posts:profile_unfollow',
+                           kwargs={'username': self.post.author})
+        response = self.authorized_new_user.get(template)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        guest_status = self.guest_client.get(template).status_code
+        self.assertEqual(guest_status, HTTPStatus.FOUND)
