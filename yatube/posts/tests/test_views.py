@@ -20,6 +20,11 @@ class PostPagesTests(TestCase):
         cls.user = User.objects.create_user(username='author')
         cls.authorized_client = Client()
         cls.authorized_client.force_login(cls.user)
+        # Создаем второго юзера для теста подписок
+        cls.new_user = User.objects.create_user(username='new_user')
+        cls.authorized_new_user = Client()
+        cls.authorized_new_user.force_login(cls.new_user)
+
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='classic',
@@ -32,7 +37,6 @@ class PostPagesTests(TestCase):
 
     # Удалил def test_pages_uses_correct_template,
     # так как проверяется в test_urls
-
     def test_post_create_page_show_correct_context(self):
         """Шаблон post_create сформирован с правильным контекстом."""
         response = self.authorized_client.get(
@@ -62,6 +66,25 @@ class PostPagesTests(TestCase):
                     kwargs={'post_id': self.post.pk}))
         self.assertEqual(response.context.get('count_posts'),
                          post_count)
+
+    def test_profile_follow(self):
+        count_follower = self.new_user.follower.count()
+        self.authorized_new_user.get(
+            reverse('posts:profile_follow',
+                    kwargs={'username': self.post.author}))
+        count_follower_before = self.new_user.follower.count()
+        self.assertEqual(count_follower_before, count_follower + 1)
+
+    def test_profile_unfollow(self):
+        self.authorized_new_user.get(
+            reverse('posts:profile_follow',
+                    kwargs={'username': self.post.author}))
+        count_follower = self.new_user.follower.count()
+        self.authorized_new_user.get(
+            reverse('posts:profile_unfollow',
+                    kwargs={'username': self.post.author}))
+        count_follower_before = self.new_user.follower.count()
+        self.assertEqual(count_follower_before, count_follower - 1)
 
 
 class PaginatorViewsTest(TestCase):
@@ -130,17 +153,32 @@ class PaginatorViewsTest(TestCase):
         self.assertEqual(len(response.context.get('page_obj')),
                          PaginatorViewsTest.count_posts_on_page(page=2))
 
-    def test_cash_for_index(self):
+    def test_cache_for_index(self):
         """Проверка работы кэша на главной странице"""
-        response = self.client.get(reverse('posts:index'))
-        count_posts_before = response.context.get(
+        GET_ONLY_FIRST = 8
+        before_delete = self.client.get(reverse('posts:index'))
+        count_before_delete = before_delete.context.get(
             'page_obj').paginator.object_list.count()
-        self.assertEqual(count_posts_before,
+        self.assertEqual(count_before_delete,
                          PaginatorViewsTest.batch_size)
-        cache.clear()
-        Post.objects.first().delete()
-        count_post_after = response.context.get(
+        Post.objects.filter(
+            id__gt=GET_ONLY_FIRST).delete()  # Оставляем только 8 постов
+        after_delete = self.client.get(reverse('posts:index'))
+        count_after_delete = after_delete.context.get(
             'page_obj').paginator.object_list.count()
-        self.assertEqual(count_post_after,
-                         PaginatorViewsTest.batch_size - 1)
-        # Почему-то без очистки кеша все работает, пока не понял...
+        self.assertEqual(count_after_delete,
+                         GET_ONLY_FIRST)  # Проверяем что кол-во == 8
+        self.assertNotEqual(before_delete.content, after_delete.content,
+                            "Кэширование страницы не работает")
+        cache.clear()
+        # после очистки кэша делаем 2 запроса
+        # и убеждаемся что они совпадают
+        after_clear_cache = self.client.get(reverse('posts:index'))
+        self.assertNotEqual(after_clear_cache.content,
+                            after_delete.content,
+                            "Кэширование страницы не работает")
+
+        after_clear_cache_2 = self.client.get(reverse('posts:index'))
+        self.assertEqual(after_clear_cache.content,
+                         after_clear_cache_2.content,
+                         "Кэширование страницы не работает")
