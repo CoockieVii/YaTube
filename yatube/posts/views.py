@@ -19,20 +19,18 @@ def paginator(request, posts):
 def index(request):
     posts = Post.objects.all()
     page_obj = paginator(request, posts)
-    template = 'posts/index.html'
     context = {'page_obj': page_obj,
                'CACHING_DURATION': CACHING_DURATION, }
-    return render(request, template, context)
+    return render(request, 'posts/index.html', context)
 
 
 def group_posts(request, slug):
     group = get_object_or_404(Group, slug=slug)
-    template = 'posts/group_list.html'
     posts = group.posts.all()
     page_obj = paginator(request, posts)
     context = {'group': group,
                'page_obj': page_obj}
-    return render(request, template, context)
+    return render(request, 'posts/group_list.html', context)
 
 
 def profile(request, username):
@@ -42,15 +40,11 @@ def profile(request, username):
     page_obj = paginator(request, posts)
     context = {'author': author,
                'page_obj': page_obj}
-    # Спасибо, я и не задумывался о том,
-    # что юзера можно таким образом получать))
     if user.is_authenticated:
-        context['following'] = False  # Такой способ одобряется?
+        context['following'] = False
         if Follow.objects.filter(author_id=author.id, user_id=user.id):
             context['following'] = True
-
-    template = 'posts/profile.html'
-    return render(request, template, context)
+    return render(request, 'posts/profile.html', context)
 
 
 def post_detail(request, post_id):
@@ -63,11 +57,7 @@ def post_detail(request, post_id):
                'count_posts': count_posts,
                'form': form,
                'comments': comments}
-
-    template = 'posts/post_detail.html'
-    # template был по порядку render и поэтому выше была,
-    # намек на то чтобы сместил в конец?))
-    return render(request, template, context)
+    return render(request, 'posts/post_detail.html', context)
 
 
 @login_required
@@ -79,8 +69,7 @@ def post_create(request):
         post.author = request.user
         post.save()
         return redirect('posts:profile', post.author)
-    template = 'posts/create_post.html'
-    return render(request, template, context)
+    return render(request, 'posts/create_post.html', context)
 
 
 @login_required
@@ -95,9 +84,10 @@ def post_edit(request, post_id):
     if form.is_valid():
         form.save()
         return redirect('posts:post_detail', post_id=post.id)
-    template = 'posts/create_post.html'
-    context = {'is_edit': True, 'form': form, 'post_id': post_id}
-    return render(request, template, context)
+    context = {'is_edit': True,
+               'form': form,
+               'post_id': post_id}
+    return render(request, 'posts/create_post.html', context)
 
 
 @login_required
@@ -115,11 +105,10 @@ def add_comment(request, post_id):
 @login_required
 def follow_index(request):
     all_posts = Post.objects.filter(
-        author__following__user=request.user)  # Буду пользоваться)
+        author__following__user=request.user)
     page_obj = paginator(request, all_posts)
-    template = 'posts/follow.html'
     context = {'page_obj': page_obj}
-    return render(request, template, context)
+    return render(request, 'posts/follow.html', context)
 
 
 @login_required
