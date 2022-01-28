@@ -7,7 +7,7 @@ from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from posts.models import Post, Group
+from posts.models import Post, Group, Follow
 from yatube.settings import SHOW_MAX_POSTS
 
 User = get_user_model()
@@ -34,6 +34,9 @@ class PostPagesTests(TestCase):
             text='text',
             author=cls.user,
             group=cls.group)
+
+        cls.follow = Follow.objects.create(user=cls.new_user,
+                                           author=cls.post.author)
 
     # Удалил def test_pages_uses_correct_template,
     # так как проверяется в test_urls
@@ -68,23 +71,69 @@ class PostPagesTests(TestCase):
                          post_count)
 
     def test_profile_follow(self):
+        """Тестирование подписки на автора поста."""
         count_follower = self.new_user.follower.count()
         self.authorized_new_user.get(
             reverse('posts:profile_follow',
                     kwargs={'username': self.post.author}))
         count_follower_before = self.new_user.follower.count()
         self.assertEqual(count_follower_before, count_follower + 1)
+        last_follow = Follow.objects.first()
+        self.assertEqual(last_follow.user_id, self.new_user.id)
+        self.assertEqual(last_follow.author_id, self.post.author.id)
 
     def test_profile_unfollow(self):
-        self.authorized_new_user.get(
-            reverse('posts:profile_follow',
-                    kwargs={'username': self.post.author}))
-        count_follower = self.new_user.follower.count()
+        """Тестирование отписки от автора поста."""
+        count_all_follows = self.new_user.follower.count()
         self.authorized_new_user.get(
             reverse('posts:profile_unfollow',
                     kwargs={'username': self.post.author}))
-        count_follower_before = self.new_user.follower.count()
-        self.assertEqual(count_follower_before, count_follower - 1)
+        count_follows_before_unfollow = self.new_user.follower.count()
+        self.assertEqual(count_follows_before_unfollow,
+                         count_all_follows - 1)
+
+
+class PostsForFollowerTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # Создаем первого юзера для теста
+        cls.author = User.objects.create_user(username='author')
+        cls.authorized_client = Client()
+        cls.authorized_client.force_login(cls.author)
+        # Создаем второго юзера для теста
+        cls.auth_user = User.objects.create_user(username='auth_user')
+        cls.authorized_auth_user = Client()
+        cls.authorized_auth_user.force_login(cls.auth_user)
+        # Создаем группу для теста
+        cls.group = Group.objects.create(
+            title='Тестовая группа',
+            slug='test_group',
+            description='Тестовое описание группы')
+
+    def test_show_posts_for_follower(self):
+        """Тестирование отображение постов у подписчиков"""
+        count_posts_follow_index_before = Post.objects.filter(
+            author__following__user=self.auth_user).count()
+        post = Post.objects.create(text='Создаем тестовый пост', author= self.author, group=self.group)
+        # Подписываемся на автора
+        Follow.objects.create(user=self.auth_user,
+                              author=post.author)
+        count_posts_follow_index_after = Post.objects.filter(
+            author__following__user=self.auth_user).count()
+        self.assertEqual(count_posts_follow_index_after,
+                         count_posts_follow_index_before + 1)
+
+    def test_show_posts_for_unfollower(self):
+        """Тестирование отображение постов у подписчиков"""
+        count_posts_follow_index_before = Post.objects.filter(
+            author__following__user=self.auth_user).count()
+        Post.objects.create(text='Создаем тестовый пост',
+                            author=self.author, group=self.group)
+        posts_follow_index_after = Post.objects.filter(
+            author__following__user=self.auth_user).count()
+        self.assertEqual(count_posts_follow_index_before,
+                         posts_follow_index_after)
 
 
 class PaginatorViewsTest(TestCase):
