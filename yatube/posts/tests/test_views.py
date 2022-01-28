@@ -115,10 +115,10 @@ class PostsForFollowerTests(TestCase):
         """Тестирование отображение постов у подписчиков"""
         count_posts_follow_index_before = Post.objects.filter(
             author__following__user=self.auth_user).count()
-        post = Post.objects.create(text='Создаем тестовый пост', author= self.author, group=self.group)
+        post = Post.objects.create(text='Создаем тестовый пост',
+                                   author=self.author, group=self.group)
         # Подписываемся на автора
-        Follow.objects.create(user=self.auth_user,
-                              author=post.author)
+        Follow.objects.create(user=self.auth_user, author=post.author)
         count_posts_follow_index_after = Post.objects.filter(
             author__following__user=self.auth_user).count()
         self.assertEqual(count_posts_follow_index_after,
