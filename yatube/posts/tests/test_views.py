@@ -35,29 +35,23 @@ class PostPagesTests(TestCase):
             author=cls.user,
             group=cls.group)
 
-        cls.follow = Follow.objects.create(user=cls.new_user,
-                                           author=cls.post.author)
-
     # Удалил def test_pages_uses_correct_template,
     # так как проверяется в test_urls
     def test_post_create_page_show_correct_context(self):
         """Шаблон post_create сформирован с правильным контекстом."""
-        response = self.authorized_client.get(
-            reverse('posts:post_create'))
+        response = self.authorized_client.get(reverse('posts:post_create'))
         form_fields = {'text': forms.fields.CharField,
                        'group': forms.fields.ChoiceField,
                        'image': forms.ImageField}
         for value, expected in form_fields.items():
             with self.subTest(value=value):
-                form_field = response.context.get('form').fields.get(
-                    value)
+                form_field = response.context.get('form').fields.get(value)
                 self.assertIsInstance(form_field, expected)
 
     def test_post_edit_pages_show_correct_context(self):
         """Шаблон post_edit сформирован с правильным контекстом."""
         response = self.authorized_client.get(
-            reverse('posts:post_edit',
-                    kwargs={'post_id': self.post.pk}))
+            reverse('posts:post_edit', kwargs={'post_id': self.post.pk}))
         self.assertEqual(response.context.get('is_edit'), True)
         # form_fields уже проверен
 
@@ -65,10 +59,8 @@ class PostPagesTests(TestCase):
         """Шаблон post_detail сформирован с правильным контекстом."""
         post_count = Post.objects.count()
         response = self.authorized_client.get(
-            reverse('posts:post_detail',
-                    kwargs={'post_id': self.post.pk}))
-        self.assertEqual(response.context.get('count_posts'),
-                         post_count)
+            reverse('posts:post_detail', kwargs={'post_id': self.post.pk}))
+        self.assertEqual(response.context.get('count_posts'), post_count)
 
     def test_profile_follow(self):
         """Тестирование подписки на автора поста."""
@@ -84,13 +76,13 @@ class PostPagesTests(TestCase):
 
     def test_profile_unfollow(self):
         """Тестирование отписки от автора поста."""
+        Follow.objects.create(user=self.new_user, author=self.post.author)
         count_all_follows = self.new_user.follower.count()
         self.authorized_new_user.get(
             reverse('posts:profile_unfollow',
                     kwargs={'username': self.post.author}))
         count_follows_before_unfollow = self.new_user.follower.count()
-        self.assertEqual(count_follows_before_unfollow,
-                         count_all_follows - 1)
+        self.assertEqual(count_follows_before_unfollow, count_all_follows - 1)
 
 
 class PostsForFollowerTests(TestCase):
@@ -112,7 +104,7 @@ class PostsForFollowerTests(TestCase):
             description='Тестовое описание группы')
 
     def test_show_posts_for_follower(self):
-        """Тестирование отображение постов у подписчиков"""
+        """Тестирование отображение постов с подпиской"""
         count_posts_follow_index_before = Post.objects.filter(
             author__following__user=self.auth_user).count()
         post = Post.objects.create(text='Создаем тестовый пост',
@@ -125,7 +117,7 @@ class PostsForFollowerTests(TestCase):
                          count_posts_follow_index_before + 1)
 
     def test_show_posts_for_unfollower(self):
-        """Тестирование отображение постов у подписчиков"""
+        """Тестирование отображение постов без подписки"""
         count_posts_follow_index_before = Post.objects.filter(
             author__following__user=self.auth_user).count()
         Post.objects.create(text='Создаем тестовый пост',
@@ -168,35 +160,39 @@ class PaginatorViewsTest(TestCase):
             cls.post = Post.objects.bulk_create(batch, batch_size)
 
     def test_index_first_page(self):
+        """Тестируем пайджинатор на первой странице 'posts:index'"""
         response = self.client.get(reverse('posts:index'))
         self.assertEqual(
             len(response.context.get('page_obj')), SHOW_MAX_POSTS)
 
     def test_index_second_page(self):
+        """Тестируем пайджинатор на второй странице 'posts:index'"""
         response = self.client.get(reverse('posts:index') + '?page=2')
         self.assertEqual(len(response.context.get('page_obj')),
                          PaginatorViewsTest.count_posts_on_page(page=2))
 
     def test_group_first_page(self):
+        """Тестируем пайджинатор на первой странице 'posts:group'"""
         response = self.client.get(
             reverse('posts:group', kwargs={'slug': self.group.slug}))
         self.assertEqual(
             len(response.context.get('page_obj')), SHOW_MAX_POSTS)
 
     def test_group_second_page(self):
+        """Тестируем пайджинатор на второй странице 'posts:group'"""
         response = self.client.get(reverse('posts:group', kwargs={
             'slug': self.group.slug}) + '?page=2')
         self.assertEqual(len(response.context.get('page_obj')),
                          PaginatorViewsTest.count_posts_on_page(page=2))
 
     def test_profile_first_page(self):
+        """Тестируем пайджинатор на первой странице 'posts:profile'"""
         response = self.client.get(
-            reverse('posts:profile',
-                    kwargs={'username': self.user.username}))
-        self.assertEqual(
-            len(response.context.get('page_obj')), SHOW_MAX_POSTS)
+            reverse('posts:profile', kwargs={'username': self.user.username}))
+        self.assertEqual(len(response.context.get('page_obj')), SHOW_MAX_POSTS)
 
     def test_profile_second_page(self):
+        """Тестируем пайджинатор на второй странице 'posts:profile'"""
         response = self.client.get(reverse('posts:profile', kwargs={
             'username': self.user.username}) + '?page=2')
         self.assertEqual(len(response.context.get('page_obj')),
@@ -208,8 +204,7 @@ class PaginatorViewsTest(TestCase):
         before_delete = self.client.get(reverse('posts:index'))
         count_before_delete = before_delete.context.get(
             'page_obj').paginator.object_list.count()
-        self.assertEqual(count_before_delete,
-                         PaginatorViewsTest.batch_size)
+        self.assertEqual(count_before_delete, PaginatorViewsTest.batch_size)
         Post.objects.filter(
             id__gt=GET_ONLY_FIRST).delete()  # Оставляем только 8 постов
         after_delete = self.client.get(reverse('posts:index'))
