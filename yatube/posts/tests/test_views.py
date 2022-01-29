@@ -115,6 +115,13 @@ class PostsForFollowerTests(TestCase):
             author__following__user=self.auth_user).count()
         self.assertEqual(count_posts_follow_index_after,
                          count_posts_follow_index_before + 1)
+        # Добавил запрос страницы
+        page_auth_user = self.authorized_auth_user.get(
+            reverse('posts:follow_index'))
+        count_posts_on_page_auth_user = len(
+            page_auth_user.context.get('page_obj'))
+        self.assertEqual(count_posts_on_page_auth_user,
+                         count_posts_follow_index_before + 1)
 
     def test_show_posts_for_unfollower(self):
         """Тестирование отображение постов без подписки"""
@@ -126,6 +133,13 @@ class PostsForFollowerTests(TestCase):
             author__following__user=self.auth_user).count()
         self.assertEqual(count_posts_follow_index_before,
                          posts_follow_index_after)
+        # Добавил запрос страницы
+        page_auth_user = self.authorized_auth_user.get(
+            reverse('posts:follow_index'))
+        count_posts_on_page_auth_user = len(
+            page_auth_user.context.get('page_obj'))
+        self.assertEqual(count_posts_on_page_auth_user,
+                         count_posts_follow_index_before)
 
 
 class PaginatorViewsTest(TestCase):
