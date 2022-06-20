@@ -17,26 +17,26 @@
 
 # Запуск:
     Клонировать репозиторий:
-        <git clone https://github.com/CoockieVii/hw05_final.git>
+        git clone https://github.com/CoockieVii/hw05_final.git
     
     перейти в него в командной строке:
-        <cd api_yamdb>
+        cd api_yamdb
 
     Cоздать и активировать виртуальное окружение:
-        <python -m venv venv>
-        <source venv/Scripts/activate>
+        python -m venv venv
+        source venv/Scripts/activate
     
     Обновить менеджер пакетов:
-        <python -m pip install --upgrade pip>
+        python -m pip install --upgrade pip
 
     Установить зависимости из файла requirements.txt:
-        <pip install -r requirements.txt>
+        pip install -r requirements.txt
 
     Выполнить миграции:
-        <python manage.py migrate>
+        python manage.py migrate
 
     Запустить проект:
-        <python manage.py runserver>
+        python manage.py runserver
     
 
 # Инструментарий:
