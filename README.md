@@ -45,13 +45,3 @@
 
     Запустить проект:
         python manage.py runserver
-    
-
-# Инструментарий:
-
-    Django 2.2
-    Python 3.9
-    Django Unittest
-    Django debug toolbar
-    PostgreSQL
-    Django ORM
